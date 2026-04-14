@@ -1,0 +1,345 @@
+import React, { useState, useEffect } from 'react';
+import { Coffee, ChevronRight, RefreshCw, Share2, Heart, Zap, Sparkles, Coffee as CoffeeIcon, Moon, Sun, ShoppingBag, Terminal, Music, Smile } from 'lucide-react';
+
+const App = () => {
+  const [gameState, setGameState] = useState('landing'); 
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [scores, setScores] = useState({ rational: 0, emotional: 0, hard: 0, soft: 0, unique: 0, efficiency: 0 });
+  const [result, setResult] = useState(null);
+
+  const personalityData = {
+    '1': { name: '冰美式', title: '極簡冷靜型', trait: '理性至上、不愛麻煩', desc: '今天的你就像冰美式，拒絕一切多餘的糖分與社交客套。你冷靜得像個機器人，處理問題快狠準，是同事眼中的高效大神。' },
+    '2': { name: '拿鐵', title: '溫和穩定型', trait: '好相處、重安全感', desc: '今天的你擁有極高的情緒價值，像拿鐵一樣平衡了苦澀與香甜。你不喜歡衝突，是朋友圈中的「萬能膠水」，把大家黏在一起。' },
+    '3': { name: '卡布奇諾', title: '細節講究型', trait: '對生活有要求、有儀式感', desc: '今天的你對質感的追求連 1mm 的奶泡厚度都不放過。生活對你來說不是「生存」，而是一場需要精心佈置的展覽。' },
+    '4': { name: '焦糖瑪奇朵', title: '甜中帶狠型', trait: '外柔內剛、其實很有主見', desc: '今天的你看起來甜美可人，但底下的濃縮咖啡才是你的真面目。別想輕易說服你，你只是習慣用優雅的外殼包裹堅硬的靈魂。' },
+    '5': { name: '摩卡', title: '情緒豐富型', trait: '感性派、容易被影響心情', desc: '今天的你是一個多愁善感的藝術家。巧克力與咖啡的混合就像你的內心，前一秒在憂鬱，後一秒可能因為一張美圖而開心。' },
+    '6': { name: '星冰樂', title: '快樂享樂型', trait: '人生要甜、快樂最重要', desc: '今天的你是為了快樂而活的！什麼自律、減肥，在冰沙和鮮奶油面前都不值一提。你的存在就是為了讓世界充滿歡笑。' },
+    '7': { name: '草莓星冰樂', title: '戀愛腦浪漫型', trait: '愛幻想、容易心動', desc: '今天的你的世界內建粉紅濾鏡。相信轉角遇到愛，相信命中注定。雖然常被說不切實際，但這份童心是你最珍貴的寶物。' },
+    '8': { name: '抹茶星冰樂', title: '療癒逃避型', trait: '壓力大就想躲起來', desc: '當世界讓你心煩，今天的你就想一頭栽進綠色的森林裡。你不是軟弱，你只是需要一個「斷網」的空間來修補自己。' },
+    '9': { name: '香草拿鐵', title: '低調精緻型', trait: '不張揚但有品味', desc: '今天的你不追求爆紅，但你的穿搭和選物總是讓人忍不住詢問。香草的香氣是你內斂的展現，懂的人自然懂。' },
+    '10': { name: '榛果拿鐵', title: '溫緩陪伴型', trait: '重感情、很顧人', desc: '今天的你是那個會幫大家訂位、提醒朋友帶傘的人。榛果的香氣是你溫暖的守護，大家都覺得有你在真好。' },
+    '11': { name: '燕麥拿鐵', title: '健康自律型', trait: '注重生活品質與身體', desc: '今天的你是一個精緻的「地球公民」。比起短暫的快感，你更在意長遠的健康與平衡，生活過得規律且富有質感。' },
+    '12': { name: '冷萃咖啡', title: '效率極致型', trait: '重效率、討厭浪費時間', desc: '今天的你追求的是「純粹的高效」。不廢話、不開會，能用簡訊講完的事情絕對不通話，你的時間就是金錢。' },
+    '13': { name: '氮氣冷萃', title: '低調高手型', trait: '不愛張揚但其實很強', desc: '今天的你像氮氣咖啡一樣，表面平靜無波，但喝下去後勁十足。你是那種平時不說話，一開口就驚艷全場的技術型天才。' },
+    '14': { name: '義式濃縮 (Espresso)', title: '硬核直球型', trait: '不囉嗦、直接來', desc: '今天的你的字典裡沒有「客氣」兩個字。想說什麼就說，想做什麼就做，雖然有時候會燙到別人，但這就是最真實的你。' },
+    '15': { name: '美式加雙份濃縮', title: '過勞戰士型', trait: '靠咖啡撐人生', desc: '今天的你現在是「生存模式」全開。雖然身體在哀號，但鬥志很高昂。辛苦了，你是撐起團隊的那根大支柱！' },
+    '16': { name: '去咖啡因咖啡', title: '理性養生型', trait: '想放鬆但也要健康', desc: '今天的你是個清醒的玩家。想參與社交但不想損害睡眠，這種「既要又要」的智慧，展現了你高超的平衡藝術。' },
+    '17': { name: '半糖去冰拿鐵', title: '控制狂完美型', trait: '什麼都要剛剛好', desc: '「剛剛好」對今天的你來說是一種信仰。你的人生精確到小數點後兩位，任何不在預期內的變動都會讓你抓狂。' },
+    '18': { name: '超甜客製咖啡', title: '情緒補償型', trait: '壓力大就靠甜', desc: '今天的你正在進行一場「糖分救贖」。生活或許很難，但至少這杯咖啡要是甜的。你是一個需要被呵護、被理解的人。' },
+    '19': { name: '手沖咖啡', title: '文青講究型', trait: '享受過程、慢生活', desc: '在快節奏的時代，今天的你偏要慢下來。你喜歡老派的浪漫，喜歡有溫度的器皿，你的人生哲學是「慢即是快」。' },
+    '20': { name: '季節限定特調', title: '跟風冒險型', trait: '愛嘗鮮、怕錯過', desc: '今天的你好奇心爆棚！世界這麼大，你什麼都想試試看。你不怕踩雷，只怕生活一成不變，永遠在追求下一個驚喜。' }
+  };
+
+  const questions = [
+    {
+      q: "當你早上走進星巴克時，你的精神狀態是？",
+      options: [
+        { text: "靈魂還在床上，我只是具移動的軀殼", scores: { hard: 2, rational: 1 } },
+        { text: "精神奕奕！已經準備好今天的大計", scores: { efficiency: 2, rational: 1 } },
+        { text: "有點小憂鬱，需要一點儀式感來喚醒自己", scores: { emotional: 2, soft: 1 } },
+        { text: "我是誰？我在哪？先點一杯最甜的再說", scores: { soft: 2, unique: 1 } }
+      ]
+    },
+    {
+      q: "點餐時，後面排了長長的人龍，你會？",
+      options: [
+        { text: "神速點完，絕對不耽誤別人的時間", scores: { rational: 2, efficiency: 2 } },
+        { text: "不管別人，一定要跟店員問清楚每款差別", scores: { unique: 2, soft: 1 } },
+        { text: "客製化要求一堆：燕麥奶、加一份濃縮、去冰...", scores: { hard: 1, unique: 2 } },
+        { text: "感到壓力山大，隨便點一個最熟悉的", scores: { soft: 2, rational: 1 } }
+      ]
+    },
+    {
+      q: "店員把你的名字寫錯了（例如：小明寫成小萌），你會？",
+      options: [
+        { text: "根本沒看杯子，拿了就走", scores: { efficiency: 2, rational: 1 } },
+        { text: "覺得可愛，立刻拍照發限動分享", scores: { emotional: 2, unique: 1 } },
+        { text: "強迫症發作，心裡默默糾結了 5 分鐘", scores: { hard: 2, soft: 1 } },
+        { text: "不在意，甚至覺得這名字好像比較適合我", scores: { soft: 2, emotional: 1 } }
+      ]
+    },
+    {
+      q: "在店裡找座位時，你最想坐在哪？",
+      options: [
+        { text: "靠牆或角落，別人都看不到我最好", scores: { soft: 1, rational: 2 } },
+        { text: "大長桌，拿著電腦展現「我很專業」的氛圍", scores: { efficiency: 2, rational: 1 } },
+        { text: "沙發區，最好能整個人陷進去", scores: { soft: 2, emotional: 1 } },
+        { text: "落地窗前，看著外面的人來人往發呆", scores: { emotional: 2, unique: 1 } }
+      ]
+    },
+    {
+      q: "如果你正在處理一件煩人的公事，你會怎麼喝咖啡？",
+      options: [
+        { text: "像喝藥一樣猛灌一口，然後繼續拚命", scores: { hard: 2, rational: 1 } },
+        { text: "慢慢品嚐，每喝一口都在心裡罵一句髒話", scores: { emotional: 2, hard: 1 } },
+        { text: "拍照拍 10 分鐘，修完圖再喝", scores: { unique: 2, emotional: 1 } },
+        { text: "喝了一半就忘了，直到它變涼為止", scores: { soft: 2, emotional: 1 } }
+      ]
+    },
+    {
+      q: "面對連假結束後的週一，你的內心戲是？",
+      options: [
+        { text: "天要亡我！為什麼要上班！", scores: { emotional: 2, unique: 1 } },
+        { text: "沒關係，我有咖啡，我是無敵的", scores: { hard: 2, rational: 1 } },
+        { text: "已經開始規劃下一個長假要去哪裡", scores: { soft: 1, unique: 2 } },
+        { text: "心如死水，安靜地做個社畜", scores: { rational: 2, soft: 1 } }
+      ]
+    },
+    {
+      q: "當你在店內遇到很久沒見的不熟老同學，你會？",
+      options: [
+        { text: "假裝沒看到，低頭猛滑手機", scores: { rational: 2, soft: 1 } },
+        { text: "熱情寒暄，雖然內心尷尬到腳趾扣地", scores: { soft: 2, emotional: 1 } },
+        { text: "直接走過去，用 1 分鐘交代完近況後閃人", scores: { efficiency: 2, hard: 1 } },
+        { text: "默默觀察他變胖了還是變美了", scores: { emotional: 1, unique: 2 } }
+      ]
+    },
+    {
+      q: "你對「減糖」或「養生」的看法是？",
+      options: [
+        { text: "糖分就是我的續命水，減糖是不可能的", scores: { emotional: 2, soft: 1 } },
+        { text: "嚴格執行，所有的咖啡必須換植物奶", scores: { hard: 2, rational: 1 } },
+        { text: "看心情，今天想墮落就墮落", scores: { soft: 1, unique: 2 } },
+        { text: "為了活久一點，還是克制一下吧", scores: { rational: 2, soft: 1 } }
+      ]
+    },
+    {
+      q: "你突然中了大獎 100 萬，你會怎麼花？",
+      options: [
+        { text: "全部存起來，繼續過原本的生活", scores: { rational: 2, efficiency: 1 } },
+        { text: "立刻辭職，出國環遊世界", scores: { unique: 2, emotional: 1 } },
+        { text: "買一堆喜歡很久但不敢買的奢侈品", scores: { unique: 1, soft: 2 } },
+        { text: "分給家人和朋友，大家一起開心", scores: { soft: 2, emotional: 1 } }
+      ]
+    },
+    {
+      q: "最後，如果你這輩子只能喝一種咖啡，你會選？",
+      options: [
+        { text: "經典款，熟悉的最對味", scores: { soft: 2, rational: 1 } },
+        { text: "最強勁的，這世界太累了", scores: { hard: 2, efficiency: 1 } },
+        { text: "最高級的，我要享受人生", scores: { unique: 2, emotional: 1 } },
+        { text: "隨便，有的喝就行", scores: { rational: 2, soft: 1 } }
+      ]
+    }
+  ];
+
+  const handleAnswer = (optionScores) => {
+    const newScores = { ...scores };
+    Object.keys(optionScores).forEach(key => {
+      newScores[key] += optionScores[key];
+    });
+    setScores(newScores);
+
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      calculateResult(newScores);
+    }
+  };
+
+  const calculateResult = (finalScores) => {
+    const { rational, emotional, hard, soft, unique, efficiency } = finalScores;
+    let rid = '1';
+
+    if (hard > 12 && efficiency > 10) rid = '15'; 
+    else if (rational > 15 && efficiency > 12) rid = '12'; 
+    else if (rational > 15 && hard > 10) rid = '1'; 
+    else if (unique > 15 && emotional > 12) rid = '20'; 
+    else if (soft > 15 && emotional > 12) rid = '7'; 
+    else if (soft > 15 && rational > 12) rid = '2'; 
+    else if (unique > 15 && hard > 10) rid = '19'; 
+    else if (emotional > 15 && soft > 12) rid = '6'; 
+    else if (hard > 15 && unique > 10) rid = '14'; 
+    else if (efficiency > 12 && unique > 12) rid = '13'; 
+    else if (rational > 12 && soft > 12) rid = '16'; 
+    else if (hard > 12 && soft > 12) rid = '17'; 
+    else if (emotional > 12 && rational > 12) rid = '3'; 
+    else if (unique > 12 && soft > 12) rid = '4'; 
+    else if (emotional > 10 && hard > 10) rid = '5'; 
+    else if (soft > 12 && efficiency > 8) rid = '10'; 
+    else if (rational > 10 && unique > 8) rid = '11'; 
+    else if (soft > 10 && unique > 8) rid = '9'; 
+    else if (emotional > 12 && efficiency < 10) rid = '8'; 
+    else rid = '18'; 
+
+    setResult(personalityData[rid]);
+    setGameState('result');
+  };
+
+  const resetGame = () => {
+    setGameState('landing');
+    setCurrentQuestion(0);
+    setScores({ rational: 0, emotional: 0, hard: 0, soft: 0, unique: 0, efficiency: 0 });
+    setResult(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F9F7F2] text-[#1E3932] selection:bg-[#00704A] selection:text-white pb-10">
+      {/* 導航 */}
+      <nav className="p-6 flex justify-between items-center max-w-4xl mx-auto border-b border-gray-200 mb-6">
+        <div className="flex items-center gap-2 font-black text-2xl tracking-tighter">
+          <div className="w-12 h-12 bg-[#00704A] rounded-full flex items-center justify-center rotate-12">
+            <CoffeeIcon className="text-white" size={28} />
+          </div>
+          <span className="hidden sm:inline">STARBUCKS <span className="text-[#00704A]">COFFEE ID</span></span>
+          <span className="sm:hidden text-[#00704A]">COFFEE ID</span>
+        </div>
+        <div className="flex gap-4">
+           <Music size={20} className="text-gray-400" />
+           <Smile size={20} className="text-gray-400" />
+        </div>
+      </nav>
+
+      <main className="max-w-4xl mx-auto p-4">
+        {gameState === 'landing' && (
+          <div className="text-center py-16 px-6 bg-white rounded-[3rem] shadow-2xl border border-gray-100 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-2 bg-[#00704A]"></div>
+            <div className="absolute -top-20 -left-20 w-64 h-64 bg-[#D4E9E2] rounded-full opacity-30"></div>
+            
+            <div className="mb-10 relative">
+              <div className="w-48 h-48 mx-auto bg-[#F1EFE9] rounded-full p-2 border-4 border-[#00704A]">
+                <img 
+                  src="https://images.unsplash.com/photo-1507133750040-4a8f5700e35f?q=80&w=400&auto=format&fit=crop" 
+                  alt="星巴克氛圍" 
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
+              <div className="absolute top-0 right-1/4 animate-bounce bg-[#00704A] text-white p-3 rounded-2xl text-xs font-bold">
+                測測今天的運勢
+              </div>
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-black mb-6 text-[#1E3932] tracking-tight">
+              今天你是<br /><span className="text-[#00704A]">什麼咖啡人格？</span>
+            </h1>
+            <p className="text-xl text-gray-500 mb-12 max-w-lg mx-auto font-medium leading-relaxed">
+              每一天的你都是獨特的。透過 10 個生活化情境，解鎖你此刻最真實的咖啡靈魂。
+            </p>
+            
+            <button 
+              onClick={() => setGameState('quiz')}
+              className="group relative px-16 py-6 bg-[#00704A] text-white rounded-full font-black text-2xl hover:bg-[#005c3d] transition-all shadow-xl hover:-translate-y-1 active:scale-95"
+            >
+              立刻解鎖今日人格 <ChevronRight className="inline-block ml-2" size={28} />
+            </button>
+
+            <div className="mt-16 flex justify-center gap-12 text-gray-400">
+               <div className="flex flex-col items-center"><Sun size={24} /><span className="text-[10px] mt-1 font-bold">精神糧食</span></div>
+               <div className="flex flex-col items-center"><Moon size={24} /><span className="text-[10px] mt-1 font-bold">熬夜救星</span></div>
+               <div className="flex flex-col items-center"><ShoppingBag size={24} /><span className="text-[10px] mt-1 font-bold">精緻生活</span></div>
+            </div>
+          </div>
+        )}
+
+        {gameState === 'quiz' && (
+          <div className="max-w-2xl mx-auto pt-4">
+            <div className="flex justify-between items-center mb-6 px-2">
+              <h3 className="text-lg font-black text-[#00704A]">Q{currentQuestion + 1} / 10</h3>
+              <div className="flex-1 mx-6 h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="bg-[#00704A] h-full transition-all duration-700 ease-out"
+                  style={{ width: `${((currentQuestion + 1) / 10) * 100}%` }}
+                ></div>
+              </div>
+              <Sparkles size={20} className="text-yellow-500 animate-pulse" />
+            </div>
+            
+            <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-gray-100 min-h-[500px] flex flex-col justify-center">
+              <h2 className="text-3xl font-black mb-12 text-[#1E3932] leading-[1.3]">
+                {questions[currentQuestion].q}
+              </h2>
+              <div className="grid gap-4">
+                {questions[currentQuestion].options.map((option, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleAnswer(option.scores)}
+                    className="group w-full text-left p-6 rounded-3xl border-2 border-[#F1EFE9] hover:border-[#00704A] hover:bg-[#F1F8F5] transition-all duration-300 relative"
+                  >
+                    <div className="flex items-center gap-4 relative z-10">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-400 group-hover:bg-[#00704A] group-hover:text-white transition-colors">
+                        {String.fromCharCode(65 + idx)}
+                      </div>
+                      <span className="text-lg font-bold text-gray-700 group-hover:text-[#1E3932]">{option.text}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {gameState === 'result' && result && (
+          <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom duration-1000">
+            <div className="bg-white rounded-[3.5rem] shadow-[0_35px_60px_-15px_rgba(0,112,74,0.15)] overflow-hidden border border-gray-100">
+              <div className="bg-[#00704A] text-white pt-16 pb-12 px-10 text-center relative">
+                 <div className="absolute top-8 left-1/2 -translate-x-1/2 opacity-20"><CoffeeIcon size={120} /></div>
+                 <p className="text-sm font-black tracking-widest uppercase mb-4 text-[#D4E9E2]">今天的你是</p>
+                 <h2 className="text-6xl font-black mb-4 drop-shadow-lg">{result.name}</h2>
+                 <div className="bg-[#D4E9E2] text-[#1E3932] px-6 py-2 rounded-full text-lg font-black inline-block shadow-inner">
+                   {result.title}
+                 </div>
+              </div>
+              
+              <div className="p-12">
+                <div className="flex items-start gap-4 mb-10 bg-[#F1F8F5] p-8 rounded-3xl">
+                  <div className="bg-white p-4 rounded-2xl shadow-sm rotate-3">
+                    <Zap className="text-[#00704A]" size={32} />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-xl mb-1">今日狀態關鍵詞</h4>
+                    <p className="text-2xl font-black text-[#00704A]">「{result.trait}」</p>
+                  </div>
+                </div>
+
+                <div className="mb-12 text-left">
+                  <h4 className="font-black text-gray-400 text-sm mb-4 uppercase tracking-widest flex items-center gap-2">
+                    <Terminal size={16} /> 今日靈魂分析報告
+                  </h4>
+                  <p className="text-xl text-gray-700 leading-[1.8] font-medium p-2">
+                    {result.desc}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-12">
+                  <div className="p-6 border-2 border-gray-100 rounded-3xl hover:bg-gray-50 transition-colors">
+                    <p className="text-xs font-black text-gray-400 mb-2">靈魂合拍夥伴</p>
+                    <p className="text-lg font-black">手沖 / 燕麥拿鐵</p>
+                  </div>
+                  <div className="p-6 border-2 border-gray-100 rounded-3xl hover:bg-gray-50 transition-colors">
+                    <p className="text-xs font-black text-gray-400 mb-2">今日好運指南</p>
+                    <p className="text-lg font-black">加一份濃縮，遠離小人</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <button 
+                    className="w-full flex items-center justify-center gap-3 py-6 bg-[#00704A] text-white rounded-3xl font-black text-xl hover:bg-[#005c3d] transition-all shadow-xl active:scale-95"
+                    onClick={() => {
+                        const text = `今天我是【${result.name}】人格！快來看看你今天是什麼咖啡：`;
+                        alert("已複製今日結果！趕快分享給朋友吧！");
+                    }}
+                  >
+                    <Share2 size={24} /> 分享今日結果
+                  </button>
+                  <button 
+                    onClick={resetGame}
+                    className="w-full py-6 text-gray-400 font-bold hover:text-[#00704A] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw size={20} /> 心情變了，再測一次
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      <footer className="mt-16 text-center text-gray-300 font-bold text-xs uppercase tracking-widest px-6">
+        <p>© 2024 Today's Coffee Personality</p>
+        <p className="mt-2 text-[10px] opacity-50">本測驗僅供娛樂，願你今天的咖啡與心情一樣完美</p>
+      </footer>
+    </div>
+  );
+};
+
+export default App;
